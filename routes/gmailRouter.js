@@ -1,7 +1,8 @@
-// const express = require("express");
-// const router = express.Router();
-// const authGoogleController = require("../controllers/authGoogleController");
+const express = require("express");
+const router = express.Router();
+const gmailController = require("../controllers/gmailController");
 
-// router.get('/login', authGoogleController.login);
+router.get('/readEmails', gmailController.readEmails);
+router.get('/searchEmailsAndcreateEvent', gmailController.searchEmailsAndcreateEvent);
 
-// module.exports = router;
+module.exports = router;

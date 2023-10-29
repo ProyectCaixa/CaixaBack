@@ -12,13 +12,13 @@ const authGoogleRouter = require("./routes/authGoogleRouter")
 const calendarRouter = require("./routes/calendarRouter")
 // const clientRouter = require("./routes/clientRouter")
 // const gestorRouter = require("./routes/gestorRouter")
-// const gmailRouter = require("./routes/gmailRouter")
+const gmailRouter = require("./routes/gmailRouter")
 
 app.use("/auth", authGoogleRouter);
 app.use("/calendar", calendarRouter);
 // app.use("/client", clientRouter);
 // app.use("/gestor", gestorRouter);
-// app.use("/gmail", gmailRouter);
+app.use("/gmail", gmailRouter);
 
 // const SCOPES = [
 //     'https://www.googleapis.com/auth/calendar',

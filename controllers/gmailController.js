@@ -1,29 +1,89 @@
-// const { google } = require('googleapis');
-// const credentials = require('./path-to-your-credentials.json');
+const { google } = require('googleapis');
+const authManager = require('./authManager');
+const axios = require('axios');
 
-// const client = new google.auth.JWT({
-//   email: credentials.client_email,
-//   key: credentials.private_key,
-//   scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-// });
+const emailData = [];
 
-// // Función para comprobar correos electrónicos no leídos
-// async function checkUnreadEmails() {
-//   try {
-//     await client.authorize();
+const gmailController = {
 
-//     const gmail = google.gmail({ version: 'v1', auth: client });
-//     const response = await gmail.users.messages.list({
-//       userId: 'me',
-//       q: 'is:unread', // Filtra por mensajes no leídos
-//     });
+    readEmails: async (req, res) => {
+        const auth = authManager.getGlobalAuth();
+        try {
+            const gmail = google.gmail({ version: 'v1', auth });
 
-//     const messages = response.data.messages;
-//     console.log('Mensajes no leídos:', messages);
-//   } catch (error) {
-//     console.error('Error al comprobar correos electrónicos:', error);
-//   }
-// }
+            emailData.length = 0;
+
+            const response = await gmail.users.messages.list({
+                userId: 'me',
+                q: 'is:unread',
+            });
+
+            const messages = response.data.messages;
+
+            for (const message of messages) {
+                const emailInfo = await gmail.users.messages.get({
+                    userId: 'me',
+                    id: message.id,
+                });
+
+                const email = emailInfo.data;
+
+                const headers = email.payload.headers;
+                const subject = headers.find(header => header.name === 'Subject').value;
+                const sender = headers.find(header => header.name === 'From').value;
+                const body = email.snippet;
+                const labels = email.labelIds;
+                const dateReceived = new Date(headers.find(header => header.name === 'Date').value).toISOString();
+
+                emailData.push({
+                    subject,
+                    sender,
+                    body,
+                    labels,
+                    id: message.id,
+                    date: dateReceived
+                });
+            }
+
+            res.json(emailData);
+        } catch (error) {
+            console.error('Error al comprobar correos electrónicos:', error);
+        }
+    },
+    searchEmailsAndcreateEvent: async (req, res) => {
+        // Filtrar correos con "hipoteca" en el asunto
+        const correosConHipoteca = emailData.filter(email => email.subject.toLowerCase().includes('hipoteca'));
+
+        // Realizar llamada por Axios y crear tarea en calendario
+        correosConHipoteca.forEach(async (correo) => {
+            try {
+                const { subject, body } = correo;
+
+                const event = {
+                    summary: subject,
+                    description: body,
+                    start: correo.date, // Suponiendo que correo.date contiene la fecha de recepción del correo
+                };
+
+                // Realizar la llamada a otro endpoint en tu servidor
+                await axios.post('http://localhost:3004/calendar/create', event);
+
+                console.log(`Tarea creada en el calendario para el correo con asunto: ${subject}`);
+                res.status(200).json({ message: 'Email filtrado y tarea creada ' });
+            } catch (error) {
+                console.error('Error al crear la tarea en el calendario:', error);
+            }
+        });
+
+        res.json(correosConHipoteca);
+    }
+
+}
+
+
+module.exports = gmailController;
+
+
 
 // // Establecer un intervalo para la comprobación cada 5 minutos (300,000 ms)
 // const interval = 5 * 60 * 1000; // 5 minutos en milisegundos
@@ -32,33 +92,7 @@
 // // Ejecutar la comprobación inmediatamente al iniciar la aplicación
 // checkUnreadEmails();
 
-// const { google } = require('googleapis');
-// const credentials = require('./path-to-your-credentials.json');
 
-// const client = new google.auth.JWT({
-//     email: credentials.client_email,
-//     key: credentials.private_key,
-//     scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-// });
-
-// // Función para comprobar correos electrónicos no leídos
-// async function checkUnreadEmails() {
-//     try {
-//         await client.authorize();
-
-//         const gmail = google.gmail({ version: 'v1', auth: client });
-//         const response = await gmail.users.messages.list({
-//             userId: 'me',
-//             q: 'is:unread', // Filtra por mensajes no leídos
-//         });
-
-//         const messages = response.data.messages;
-
-//         for (const message of messages) {
-//             const messageData = await gmail.users.messages.get({
-//                 userId: 'me',
-//                 id: message.id,
-//             });
 
 //             const subject = messageData.data.payload.headers.find((header) => header.name === 'Subject');
 //             const subjectText = subject ? subject.value : '';
@@ -80,10 +114,3 @@
 //         console.error('Error al comprobar correos electrónicos:', error);
 //     }
 // }
-
-// // Establecer un intervalo para la comprobación cada 5 minutos (300,000 ms)
-// const interval = 5 * 60 * 1000; // 5 minutos en milisegundos
-// setInterval(checkUnreadEmails, interval);
-
-// // Ejecutar la comprobación inmediatamente al iniciar la aplicación
-// checkUnreadEmails();
