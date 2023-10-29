@@ -1,0 +1,79 @@
+const { authenticate } = require('@google-cloud/local-auth');
+const { google } = require('googleapis');
+require('dotenv').config();
+const fs = require('fs').promises;
+const path = require('path');
+const process = require('process');
+const authManager = require('./authManager')
+
+const authGoogleController = {
+    login: async (req, res) => {
+        const SCOPES = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/gmail.modify'
+        ];
+        const TOKEN_PATH = path.join(process.cwd(), 'token.json');
+        const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
+
+        async function loadSavedCredentialsIfExist() {
+            try {
+                const content = await fs.readFile(TOKEN_PATH);
+                const credentials = JSON.parse(content);
+                return google.auth.fromJSON(credentials);
+            } catch (err) {
+                console.error('Error en loadSavedCredentialsIfExist', err);
+                throw err;
+            }
+        }
+
+        async function saveCredentials(client) {
+            try {
+                const content = await fs.readFile(CREDENTIALS_PATH);
+                const keys = JSON.parse(content);
+                const key = keys.installed || keys.web;
+                const payload = JSON.stringify({
+                    type: 'authorized_user',
+                    client_id: key.client_id,
+                    client_secret: key.client_secret,
+                    refresh_token: client.credentials.refresh_token,
+                });
+                await fs.writeFile(TOKEN_PATH, payload);
+            } catch (err) {
+                console.error('Error en saveCredentials', err);
+                throw err;
+            }
+        }
+
+        async function authorize() {
+            try {
+                let client = await loadSavedCredentialsIfExist();
+                if (client) {
+                    authManager.setGlobalAuth(client);
+                    return client;
+                }
+                client = await authenticate({
+                    scopes: SCOPES,
+                    keyfilePath: CREDENTIALS_PATH,
+                });
+                if (client.credentials) {
+                    await saveCredentials(client);
+                    authManager.setGlobalAuth(client);
+                }
+                return client;
+            } catch (error) {
+                console.error('Error en la autorización y listado de datos:', error);
+                throw error;
+            }
+        }
+
+        try {
+            await authorize();
+            res.json('Login con éxito');
+        } catch (error) {
+            res.status(500).json('Error en la autorización y listado de datos', error);
+        }
+    }
+};
+
+module.exports = authGoogleController
+
