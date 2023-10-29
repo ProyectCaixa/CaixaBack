@@ -70,7 +70,7 @@ const authGoogleController = {
             await authorize();
             res.json('Login con éxito');
         } catch (error) {
-            res.status(500).json('Error en la autorización y listado de datos', error);
+            console.error('Error en la autorización y listado de datos:', error);
         }
     }
 };
