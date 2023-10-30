@@ -40,7 +40,7 @@ const gmailController = {
                     const sender = headers.find(header => header.name === 'From').value;
                     const body = email.snippet;
                     const labels = email.labelIds;
-                    const dateReceived = new Date(headers.find(header => header.name === 'Date').value).toISOString();
+                    const dateReceived = new Date(headers.find(header => header.name === 'Date').value).toLocaleString();
 
                     emailData.push({
                         subject,

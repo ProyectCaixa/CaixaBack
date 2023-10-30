@@ -1,5 +1,7 @@
 const { google } = require('googleapis');
 const authManager = require('./authManager');
+const { DateTime } = require('luxon');
+
 
 const calendarController = {
     todayEvents: async (req, res) => {
@@ -28,7 +30,7 @@ const calendarController = {
                     calendarId: 'primary',
                     timeMin: todayStart.toISOString(),
                     timeMax: todayEnd.toISOString(),
-                    maxResults: 10,
+                    maxResults: 12,
                     singleEvents: true,
                     orderBy: 'startTime',
                 });
@@ -40,20 +42,23 @@ const calendarController = {
                 }
 
                 const upcomingEvents = events.map((event) => ({
-                    start: event.start.dateTime || event.start.date,
+                    start: DateTime.fromISO(event.start.dateTime || event.start.date)
+                        .toLocal()
+                        .toFormat('yyyy-MM-dd HH:mm:ss'),
                     summary: event.summary,
                 }));
+
 
                 console.log('Upcoming 10 events:', upcomingEvents);
                 res.json(upcomingEvents);
             } catch (error) {
                 console.error('Error al listar eventos:', error);
-                res.status(500).json('Error al listar eventos', error);
+                res.status(500).json('Error al listar eventos');
             }
 
         } catch (error) {
             console.error('Error al listar eventos:', error);
-            res.status(500).json('Error al autorizar y listar eventos', error);
+            res.status(500).json('Error al autorizar y listar eventos');
         }
     },
 
@@ -89,8 +94,8 @@ const calendarController = {
 
             const events = await calendar.events.list({
                 calendarId: 'primary',
-                timeMin: currentStart.toISOString(),
-                timeMax: new Date(currentStart.getTime() + 3600000).toISOString(),
+                timeMin: currentStart.toLocaleString(),
+                timeMax: new Date(currentStart.getTime() + 3600000).toLocaleString(),
                 maxResults: 1,
             });
 
@@ -133,10 +138,10 @@ const calendarController = {
                 console.log('Nuevo hueco encontrado', availableSlot);
             }
 
-            event.start.dateTime = availableSlot.toISOString();
+            event.start.dateTime = availableSlot.toLocaleString();
             const endDate = new Date(availableSlot);
             endDate.setHours(endDate.getHours() + 1);
-            event.end.dateTime = endDate.toISOString();
+            event.end.dateTime = endDate.toLocaleString();
 
             calendar.events.insert({
                 auth: auth,

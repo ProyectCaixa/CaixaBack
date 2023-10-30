@@ -10,7 +10,7 @@ function ejecutarIntervalos() {
             await axios.get('http://localhost:3004/auth/login');
             console.log(`Login realizado`);
 
-            const fechaActual = new Date().toISOString();
+            const fechaActual = new Date().toLocaleString();
 
             await gmailController.readEmails({}, { json: (data) => ({ json: data }) });
             console.log(`Ejecutando readEmails a las ${fechaActual}`);
