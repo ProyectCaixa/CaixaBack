@@ -1,8 +1,9 @@
 const { google } = require('googleapis');
 const authManager = require('./authManager');
 const axios = require('axios');
+const { DateTime } = require('luxon');
 
-const emailData = [];
+let filteredEmails = [];
 
 const gmailController = {
 
@@ -10,8 +11,6 @@ const gmailController = {
         const auth = authManager.getGlobalAuth();
 
         const gmail = google.gmail({ version: 'v1', auth });
-
-        emailData.length = 0;
 
         const response = await gmail.users.messages.list({
             userId: 'me',
@@ -24,8 +23,12 @@ const gmailController = {
         }
 
         if (response.data.resultSizeEstimate !== 0) {
+            const palabrasClave = ['hipoteca', 'préstamo', 'gestor', 'fondo', 'pensión'];
+
             try {
                 const messages = response.data.messages;
+
+                filteredEmails = [];
 
                 for (const message of messages) {
                     const emailInfo = await gmail.users.messages.get({
@@ -41,29 +44,36 @@ const gmailController = {
                     const body = email.snippet;
                     const labels = email.labelIds;
                     const dateReceived = new Date(headers.find(header => header.name === 'Date').value).toLocaleString();
+                    const contienePalabraClave = palabrasClave.some(palabra => subject.toLowerCase().includes(palabra));
 
-                    emailData.push({
-                        subject,
-                        sender,
-                        body,
-                        labels,
-                        id: message.id,
-                        date: dateReceived
-                    });
+                    if (contienePalabraClave) {
 
-                    await gmail.users.messages.modify({
-                        userId: 'me',
-                        id: message.id,
-                        resource: {
-                            removeLabelIds: ['UNREAD'],
-                        },
-                    });
+                        await gmail.users.messages.modify({
+                            userId: 'me',
+                            id: message.id,
+                            resource: {
+                                removeLabelIds: ['UNREAD'],
+                            },
+                        });
+
+
+                        filteredEmails.push({
+                            id: message.id,
+                            subject,
+                            sender,
+                            body,
+                            labels,
+                            date: dateReceived
+                        });
+                    }
                 }
 
-                res.json(emailData);
-            } catch {
-                console.error('Error al comprobar correos electrónicos');
+                res.json(filteredEmails);
+            } catch (error) {
+                console.error('Error al comprobar correos electrónicos:', error);
+                res.status(500).json('Error al comprobar correos electrónicos');
             }
+
         }
 
     },
