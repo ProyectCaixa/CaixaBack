@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('./utils/database');
 const process = require('process');
 const app = express()
 app.use(express.json())
@@ -11,6 +12,7 @@ const calendarRouter = require("./routes/calendarRouter")
 const gmailRouter = require("./routes/gmailRouter")
 const ejecutarIntervalos = require('./intervals');
 ejecutarIntervalos()
+// mongoose()
 
 app.use("/auth", authGoogleRouter);
 app.use("/calendar", calendarRouter);
