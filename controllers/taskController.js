@@ -5,14 +5,10 @@ const taskController = {
         try {
             const { title, description, priority } = req.body;
 
-            const dateEnd = completed ? new Date() : undefined;
-
             const newTask = new Task({
-                title,
-                description,
-                priority,
-                dateEnd,
-                completed,
+                title: title,
+                description: description,
+                priority: priority
             });
 
             const savedTask = await newTask.save();
@@ -27,14 +23,47 @@ const taskController = {
         try {
             const priority = req.params.priority;
 
-            const tasks = await Task.find({ priority })
+            const tasks = await Task.find({ priority, completed: false })
                 .sort({ dateStart: 1 });
 
             res.status(200).json(tasks);
         } catch (error) {
             res.status(500).json({ error: 'Error al obtener las tareas por prioridad' });
         }
+    },
+
+    getTasksCompleted: async (req, res) => {
+        try {
+            const tasks = await Task.find({ completed: true })
+                .sort({ dateEnd: -1 });
+
+            res.status(200).json(tasks);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener las tareas completadas' });
+        }
+    },
+
+    completeTask: async (req, res) => {
+        try {
+            const taskId = req.params.taskId;
+
+            const task = await Task.findById(taskId);
+
+            if (!task) {
+                return res.status(404).json({ error: 'Tarea no encontrada' });
+            }
+
+            task.completed = true;
+            task.dateEnd = new Date();
+
+            const updatedTask = await task.save();
+
+            res.status(200).json(updatedTask);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al marcar la tarea como completada' });
+        }
     }
+
 }
 
 module.exports = taskController
