@@ -1,24 +1,30 @@
 require('dotenv').config();
+const mongoose = require('mongoose');
 const express = require('express');
-const mongoose = require('./utils/database');
 const process = require('process');
 const app = express()
 app.use(express.json())
 
 const authGoogleRouter = require("./routes/authGoogleRouter")
 const calendarRouter = require("./routes/calendarRouter")
-// const clientRouter = require("./routes/clientRouter")
-// const gestorRouter = require("./routes/gestorRouter")
+const taskRouter = require("./routes/taskRouter")
 const gmailRouter = require("./routes/gmailRouter")
 const ejecutarIntervalos = require('./intervals');
-ejecutarIntervalos()
-// mongoose()
+// ejecutarIntervalos()
+
 
 app.use("/auth", authGoogleRouter);
 app.use("/calendar", calendarRouter);
-// app.use("/client", clientRouter);
-// app.use("/gestor", gestorRouter);
+app.use("/task", taskRouter);
 app.use("/gmail", gmailRouter);
+
+async function main() {
+    return await mongoose.connect(process.env.CONNECTIONDB)
+}
+
+main()
+    .then(() => console.log('Estamos conectados a la DB'))
+    .catch(err => console.log(err))
 
 const PORT = process.env.PORT
 app.listen(PORT || `0.0.0.0:$PORT`, () => {
