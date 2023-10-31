@@ -5,7 +5,7 @@ const { DateTime } = require('luxon');
 
 const calendarController = {
     todayEvents: async (req, res) => {
-
+        // coger todos los eventos del dia, exceptuando los de color morado que son los que hemos puesto para formaciones y demas actividades internas.
         try {
             const auth = authManager.getGlobalAuth();
 
@@ -34,7 +34,8 @@ const calendarController = {
                     singleEvents: true,
                     orderBy: 'startTime',
                 });
-                const events = response.data.items;
+
+                const events = response.data.items.filter(event => event.colorId !== '1');
 
                 if (!events || events.length === 0) {
                     console.log('No upcoming events found.');
@@ -45,7 +46,11 @@ const calendarController = {
                     start: DateTime.fromISO(event.start.dateTime || event.start.date)
                         .toLocal()
                         .toFormat('yyyy-MM-dd HH:mm:ss'),
+                    end: DateTime.fromISO(event.end.dateTime || event.end.date)
+                        .toLocal()
+                        .toFormat('yyyy-MM-dd HH:mm:ss'),
                     summary: event.summary,
+                    description: event.description,
                 }));
 
 
@@ -89,60 +94,7 @@ const calendarController = {
             auth,
         });
 
-        // const checkSlot = async (datestart) => {
-        //     let currentStart = new Date(datestart);
-
-        //     const events = await calendar.events.list({
-        //         calendarId: 'primary',
-        //         timeMin: currentStart.toLocaleString(),
-        //         timeMax: new Date(currentStart.getTime() + 3600000).toLocaleString(),
-        //         maxResults: 1,
-        //     });
-
-        //     if (events.data.items.length > 0) {
-
-        //         currentStart.setHours(currentStart.getHours() + 1);
-        //         return await checkSlot(currentStart);
-        //     } else {
-
-        //         if (
-        //             currentStart.getHours() < 8 ||
-        //             currentStart.getHours() >= 18 ||
-        //             currentStart.getDay() === 0 ||
-        //             currentStart.getDay() === 6
-        //         ) {
-
-        //             currentStart.setHours(8);
-        //             if (currentStart.getDay() === 0) {
-        //                 currentStart.setDate(currentStart.getDate() + 1);
-        //             } else if (currentStart.getDay() === 6) {
-        //                 currentStart.setDate(currentStart.getDate() + 2);
-        //             }
-        //         }
-        //     }
-
-        //     return currentStart;
-        // };
-
         try {
-            //     let availableSlot = await checkSlot(start);
-            //     console.log('soy la fehca', availableSlot)
-
-            //     const result = await calendar.events.list({
-            //         calendarId: 'primary',
-            //         timeMin: availableSlot,
-            //         maxResults: 1,
-            //     });
-            //     if (result.data.items.length > 0) {
-            //         availableSlot = await checkSlot(availableSlot);
-            //         console.log('Nuevo hueco encontrado', availableSlot);
-            //     }
-
-            //     event.start.dateTime = availableSlot.toLocaleString();
-            //     const endDate = new Date(availableSlot);
-            //     endDate.setHours(endDate.getHours() + 1);
-            //     event.end.dateTime = endDate.toLocaleString();
-
             calendar.events.insert({
                 auth: auth,
                 calendarId: 'primary',
@@ -176,89 +128,89 @@ const calendarController = {
             });
 
             const now = new Date();
-            const startTime = new Date(now);
-            startTime.setHours(8, 0, 0, 0);
+            const startTime = DateTime.fromJSDate(now).set({ hour: 8, minute: 0, second: 0, millisecond: 0 });
+            const startTimeBucle = startTime.toFormat('yyyy-MM-dd HH:mm:ss');
 
-            const endTime = new Date(now);
-            endTime.setHours(18, 0, 0, 0);
 
-            // Consulta para obtener eventos entre las 08:00 y las 18:00
+            const endTime = DateTime.fromJSDate(now).set({ hour: 18, minute: 0, second: 0, millisecond: 0 });
+            const endTimeFormatted = endTime.toFormat('yyyy-MM-dd HH:mm:ss');
+
             const events = await calendar.events.list({
                 auth,
                 calendarId: 'primary',
-                timeMin: startTime.toISOString(),
-                timeMax: endTime.toISOString(),
+                timeMin: startTimeBucle,
+                timeMax: endTimeFormatted,
+                maxResults: 12,
+                singleEvents: true,
+                orderBy: 'startTime',
             });
-            console.log('eventos del dia', events)
 
-            if (events.data.items.length > 0) {
-                // Encuentra un hueco entre los eventos
-                let siestaStartTime = new Date(startTime); // Inicializa con la hora de inicio de la franja horaria
-                let siestaEndTime;
 
-                for (let i = 0; i < events.data.items.length; i++) {
-                    const eventStartTime = new Date(events.data.items[i].start.dateTime);
-                    const eventEndTime = new Date(events.data.items[i].end.dateTime);
+            for (let i = 0; i < events.data.items.length; i++) {
 
-                    // Calcula la duración del espacio libre entre eventos
-                    const spaceDuration = eventStartTime - siestaStartTime;
+                let firstEventStartTimeBucle = DateTime.fromISO(events.data.items[0].start.dateTime).toLocal()
+                    .toFormat('yyyy-MM-dd HH:mm:ss')
+                let eventStartTimeBucle = DateTime.fromISO(events.data.items[i].start.dateTime).toLocal()
+                    .toFormat('yyyy-MM-dd HH:mm:ss')
+                console.log('soy start', startTimeBucle)
+                console.log('soy first', firstEventStartTimeBucle)
 
-                    if (spaceDuration >= 30 * 60 * 1000) {
-                        // Si el espacio entre eventos es de al menos 30 minutos, programa "siesta" aquí
-                        siestaEndTime = new Date(siestaStartTime.getTime() + spaceDuration);
+                if (i === 0 && firstEventStartTimeBucle > startTimeBucle) {
 
-                        const event = {
-                            summary: 'siesta',
-                            description: 'Tiempo para una siesta',
+                    const event = {
+                        summary: 'Revisión',
+                        description: 'Revisa las tareas que tienes pendientes y las citas de hoy',
+                        start: {
+                            dateTime: startTimeBucle
+
+                        },
+
+                        end: {
+                            dateTime: firstEventStartTimeBucle
+                        },
+                        colorId: '1'
+                    }
+                    await calendar.events.insert({
+                        auth,
+                        calendarId: 'primary',
+                        resource: event,
+                    });
+                    console.log('tarea creada al principio')
+                }
+
+                if (i > 0) {
+                    const eventPrevItemEndTimeBucle = new Date(events.data.items[i - 1].end.dateTime);
+
+                    if (eventStartTimeBucle > eventPrevItemEndTimeBucle) {
+
+                        const freeEvent = {
+                            summary: 'Formación',
+                            description: 'Aprovecha el tiempo para mejorar tu formación y leer la documentación de nuestros nuevos productos',
                             start: {
-                                dateTime: siestaStartTime.toISOString(),
+                                dateTime: DateTime.fromJSDate(eventPrevItemEndTimeBucle).toISO(),
                             },
                             end: {
-                                dateTime: siestaEndTime.toISOString(),
+                                dateTime: DateTime.fromJSDate(eventStartTimeBucle).toISO(),
                             },
-                        };
-
+                            colorId: '1'
+                        }
                         await calendar.events.insert({
                             auth,
                             calendarId: 'primary',
-                            resource: event,
+                            resource: freeEvent,
                         });
-
-                        return res.status(200).json('Se ha programado una siesta entre los eventos existentes.');
+                        console.log('evento creado entre eventos')
                     }
 
-                    // Establece el tiempo de inicio de "siesta" para el próximo posible espacio libre
-                    siestaStartTime = new Date(eventEndTime);
                 }
             }
 
-            // Si no se encontró un hueco entre eventos, programar "siesta" al final de la franja horaria.
-            const event = {
-                summary: 'siesta',
-                description: 'Tiempo para una siesta',
-                start: {
-                    dateTime: endTime.toISOString(),
-                },
-                end: {
-                    dateTime: new Date(endTime.getTime() + 30 * 60 * 1000).toISOString(),
-                },
-            };
-
-            await calendar.events.insert({
-                auth,
-                calendarId: 'primary',
-                resource: event,
-            });
-
-            return res.status(200).json('Se ha programado una siesta al final de la franja horaria.');
+            return res.status(200).json('Eventos de formación insertados');
         } catch (error) {
             console.error('Error al verificar y agregar una siesta:', error);
             res.status(500).json('Error al verificar y agregar una siesta.', error);
         }
     }
-
-
-
 }
 
 

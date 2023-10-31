@@ -1,6 +1,17 @@
 const Task = require('../modules/taskModel');
 
 const taskController = {
+    getAllTasks: async (req, res) => {
+        try {
+            const tasks = await Task.find({ completed: false })
+                .sort({ dateStart: 1 });
+
+            res.status(200).json(tasks);
+        } catch (error) {
+            res.status(500).json({ error: 'Error al obtener todas las tareas' });
+        }
+    },
+
     createTask: async (req, res) => {
         try {
             const { title, description, priority } = req.body;

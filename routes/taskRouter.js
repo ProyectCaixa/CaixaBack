@@ -6,5 +6,6 @@ router.post('/create', taskController.createTask);
 router.get('/priority/:priority', taskController.getTasksByPriority);
 router.get('/completed', taskController.getTasksCompleted);
 router.patch('/complete/:taskId', taskController.completeTask);
+router.get('/getall', taskController.getAllTasks);
 
 module.exports = router;
