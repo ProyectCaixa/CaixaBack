@@ -61,8 +61,6 @@ const gmailController = {
                 "Consulta de Inversiones"
             ];
 
-
-
             try {
                 const messages = response.data.messages;
 
@@ -173,7 +171,7 @@ const gmailController = {
             };
 
             for (const email of filteredEmails) {
-                const { subject, body } = email;
+                const { subject, body, sender } = email;
 
                 let priority = 'baja';
 
@@ -185,7 +183,7 @@ const gmailController = {
                 }
 
                 const taskData = {
-                    title: subject,
+                    title: `${subject} => ${sender}`,
                     description: body,
                     priority: priority,
                 };

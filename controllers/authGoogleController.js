@@ -5,6 +5,8 @@ const fs = require('fs').promises;
 const path = require('path');
 const process = require('process');
 const authManager = require('./authManager')
+const TOKEN_PATH = path.join(process.cwd(), 'token.json');
+const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 
 const authGoogleController = {
     login: async (req, res) => {
@@ -72,8 +74,37 @@ const authGoogleController = {
         } catch (error) {
             console.error('Error en la autorización y listado de datos:', error);
         }
+    },
+
+    newToken: async (req, res) => {
+        const TOKEN_PATH = '../../token.json';
+
+        const tokenData = fs.readFile(TOKEN_PATH);
+        const tokenObject = JSON.parse(tokenData);
+
+
+        const refreshToken = tokenObject.refresh_token;
+        const clientId = tokenObject.client_id;
+        const clientSecret = tokenObject.client_secret;
+
+        const requestBody = {
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken,
+            client_id: clientId,
+            client_secret: clientSecret,
+        };
+
+        await axios.post('https://accounts.google.com/o/oauth2/token', requestBody)
+            .then(response => {
+                const newAccessToken = response.data.access_token;
+                console.log('Nuevo token de acceso:', newAccessToken);
+            })
+            .catch(error => {
+                console.error('Error al refrescar el token de acceso:', error);
+            });
+
     }
-};
+}
 
 module.exports = authGoogleController
 

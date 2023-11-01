@@ -10,7 +10,7 @@ const calendarRouter = require("./routes/calendarRouter")
 const taskRouter = require("./routes/taskRouter")
 const gmailRouter = require("./routes/gmailRouter")
 const ejecutarIntervalos = require('./intervals');
-// ejecutarIntervalos()
+ejecutarIntervalos()
 
 
 app.use("/auth", authGoogleRouter);
@@ -30,3 +30,4 @@ const PORT = process.env.PORT
 app.listen(PORT || `0.0.0.0:$PORT`, () => {
     console.log(`Backend de Reto CaixaBank Tech funcionando en el puerto`, PORT)
 });
+
