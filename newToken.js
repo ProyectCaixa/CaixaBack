@@ -1,5 +1,3 @@
-//ELIMINA EL ARCHIVO token.json Y EN CONSOLA PON node newToken
-
 const fs = require('fs').promises;
 const path = require('path');
 const process = require('process');
@@ -86,9 +84,6 @@ async function listLabels(auth) {
         return;
     }
     console.log('newToken solicitado');
-    // labels.forEach((label) => {
-    //     console.log(`- ${label.name}`);
-    // });
 }
 
 authorize().then(listLabels).catch(console.error);

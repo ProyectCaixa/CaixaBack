@@ -2,8 +2,11 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const express = require('express');
 const process = require('process');
+const cors = require('cors');
 const app = express()
+
 app.use(express.json())
+app.use(cors());
 
 const authGoogleRouter = require("./routes/authGoogleRouter")
 const calendarRouter = require("./routes/calendarRouter")
