@@ -10,7 +10,7 @@ const calendarRouter = require("./routes/calendarRouter")
 const taskRouter = require("./routes/taskRouter")
 const gmailRouter = require("./routes/gmailRouter")
 const ejecutarIntervalos = require('./intervals');
-ejecutarIntervalos()
+// ejecutarIntervalos()
 
 
 app.use("/auth", authGoogleRouter);

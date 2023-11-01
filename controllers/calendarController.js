@@ -127,46 +127,42 @@ const calendarController = {
                 auth,
             });
 
-            const now = new Date();
-            const startTime = DateTime.fromJSDate(now).set({ hour: 8, minute: 0, second: 0, millisecond: 0 });
-            const startTimeBucle = startTime.toFormat('yyyy-MM-dd HH:mm:ss');
+            const now = DateTime.utc();
+            const startTime = now.set({ hour: 8, minute: 0, second: 0, millisecond: 0 });
+            const endTime = now.set({ hour: 18, minute: 0, second: 0, millisecond: 0 });
+            const startTimeFormatted = startTime.toISO();
+            const endTimeFormatted = endTime.toISO();
 
-
-            const endTime = DateTime.fromJSDate(now).set({ hour: 18, minute: 0, second: 0, millisecond: 0 });
-            const endTimeFormatted = endTime.toFormat('yyyy-MM-dd HH:mm:ss');
-
-            const events = await calendar.events.list({
+            const response = await calendar.events.list({
                 auth,
                 calendarId: 'primary',
-                timeMin: startTimeBucle,
+                timeMin: startTimeFormatted,
                 timeMax: endTimeFormatted,
-                maxResults: 12,
                 singleEvents: true,
                 orderBy: 'startTime',
             });
 
+            const events = response.data.items.filter(event => event.colorId !== '1');
 
-            for (let i = 0; i < events.data.items.length; i++) {
+            if (events.length === 0) {
+                return res.status(200).json('No tienes eventos para hoy');
+            }
 
-                let firstEventStartTimeBucle = DateTime.fromISO(events.data.items[0].start.dateTime).toLocal()
-                    .toFormat('yyyy-MM-dd HH:mm:ss')
-                let eventStartTimeBucle = DateTime.fromISO(events.data.items[i].start.dateTime).toLocal()
-                    .toFormat('yyyy-MM-dd HH:mm:ss')
-                console.log('soy start', startTimeBucle)
-                console.log('soy first', firstEventStartTimeBucle)
+            for (let i = 0; i < events.length; i++) {
 
-                if (i === 0 && firstEventStartTimeBucle > startTimeBucle) {
+                const firstEventStart = DateTime.fromISO(events[0].start.dateTime).toISO();
+                let eventStartTimeBucle = DateTime.fromISO(events[i].start.dateTime).toISO();
+
+                if (i === 0 && firstEventStart > startTimeFormatted) {
 
                     const event = {
                         summary: 'Revisión',
                         description: 'Revisa las tareas que tienes pendientes y las citas de hoy',
                         start: {
-                            dateTime: startTimeBucle
-
+                            dateTime: startTimeFormatted
                         },
-
                         end: {
-                            dateTime: firstEventStartTimeBucle
+                            dateTime: firstEventStart
                         },
                         colorId: '1'
                     }
@@ -175,11 +171,31 @@ const calendarController = {
                         calendarId: 'primary',
                         resource: event,
                     });
-                    console.log('tarea creada al principio')
+                }
+                if (i === events.length - 1) {
+                    // Crear evento al final
+                    const eventEndTime = DateTime.fromISO(events[i].end.dateTime).toISO();
+
+                    const event = {
+                        summary: 'Formación',
+                        description: 'Aprovecha el tiempo para mejorar tu formación y leer la documentación de nuestros nuevos productos',
+                        start: {
+                            dateTime: eventEndTime,
+                        },
+                        end: {
+                            dateTime: endTimeFormatted,
+                        },
+                        colorId: '1',
+                    };
+                    await calendar.events.insert({
+                        auth,
+                        calendarId: 'primary',
+                        resource: event,
+                    });
                 }
 
                 if (i > 0) {
-                    const eventPrevItemEndTimeBucle = new Date(events.data.items[i - 1].end.dateTime);
+                    const eventPrevItemEndTimeBucle = DateTime.fromISO(events[i - 1].end.dateTime).toISO();
 
                     if (eventStartTimeBucle > eventPrevItemEndTimeBucle) {
 
@@ -187,10 +203,10 @@ const calendarController = {
                             summary: 'Formación',
                             description: 'Aprovecha el tiempo para mejorar tu formación y leer la documentación de nuestros nuevos productos',
                             start: {
-                                dateTime: DateTime.fromJSDate(eventPrevItemEndTimeBucle).toISO(),
+                                dateTime: eventPrevItemEndTimeBucle,
                             },
                             end: {
-                                dateTime: DateTime.fromJSDate(eventStartTimeBucle).toISO(),
+                                dateTime: eventStartTimeBucle,
                             },
                             colorId: '1'
                         }
@@ -199,16 +215,17 @@ const calendarController = {
                             calendarId: 'primary',
                             resource: freeEvent,
                         });
-                        console.log('evento creado entre eventos')
-                    }
 
+                    }
                 }
+
+
             }
 
             return res.status(200).json('Eventos de formación insertados');
         } catch (error) {
             console.error('Error al verificar y agregar una siesta:', error);
-            res.status(500).json('Error al verificar y agregar una siesta.', error);
+            res.status(500).json('Error al verificar y agregar una siesta.');
         }
     }
 }
