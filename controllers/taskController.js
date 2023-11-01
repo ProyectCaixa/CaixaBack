@@ -74,7 +74,6 @@ const taskController = {
             res.status(500).json({ error: 'Error al marcar la tarea como completada' });
         }
     }
-
 }
 
 module.exports = taskController

@@ -5,7 +5,6 @@ const axios = require('axios');
 let filteredEmails = [];
 
 const gmailController = {
-
     readEmails: async (req, res) => {
         const auth = authManager.getGlobalAuth();
 
@@ -39,26 +38,10 @@ const gmailController = {
                 "Atención al Cliente", "Cambio de Contraseña", "Cierre de Cuenta",
                 "Fondos Mutuos", "Financiamiento de Vivienda", "urgente", "importante", "Solicitud de Préstamo", "Reclamo sobre Cargo", "Solicitud de Tarjeta de Crédito", "Reclamo sobre Transacción", "Solicitud de Préstamo Hipotecario", "Solicitud de Préstamo para Estudios", "Problema con Transferencia Bancaria",
                 "seguridad de la cuenta", "cambio de contraseña", "fondos mutuos", "Pregunta sobre Cuenta de Ahorro", "Consultas de Cuenta de Cheques", "Actualización de Contacto",
-                "Efectivo",
-                "reunión",
-                "aprobación de crédito",
-                "análisis de inversiones",
-                "Consulta de Inversiones",
-                "Pregunta sobre Cuenta de Ahorro",
-                "Actualización de Contacto",
-                "Consulta sobre Transferencias",
-                "Consulta General",
-                "Consulta sobre Tarjeta de Débito",
-                "Consulta de Préstamo Personal",
-                "Consulta de Cuenta de Cheques",
-                "Consulta sobre Hipoteca",
-                "Consulta de Préstamo Hipotecario",
-                "Solicitud de Información de Inversión",
-                "Consulta de Cuenta de Ahorro",
-                "Confirmación de Transacción",
-                "Solicitud de Tarjeta de Crédito Empresarial",
-                "Informe de Estado de Cuenta",
-                "Consulta de Inversiones"
+                "Efectivo", "reunión", "aprobación de crédito", "análisis de inversiones", "Consulta de Inversiones", "Pregunta sobre Cuenta de Ahorro", "Actualización de Contacto",
+                "Consulta sobre Transferencias", "Consulta General", "Consulta sobre Tarjeta de Débito", "Consulta de Préstamo Personal", "Consulta de Cuenta de Cheques",
+                "Consulta sobre Hipoteca", "Consulta de Préstamo Hipotecario", "Solicitud de Información de Inversión", "Consulta de Cuenta de Ahorro",
+                "Confirmación de Transacción", "Solicitud de Tarjeta de Crédito Empresarial", "Informe de Estado de Cuenta", "Consulta de Inversiones"
             ];
 
             try {
@@ -83,7 +66,6 @@ const gmailController = {
                     const contienePalabraClave = palabrasClave.some(palabra => subject.toLowerCase().includes(palabra) || body.toLowerCase().includes(palabra));
 
                     if (contienePalabraClave) {
-
                         await gmail.users.messages.modify({
                             userId: 'me',
                             id: message.id,
@@ -91,7 +73,6 @@ const gmailController = {
                                 removeLabelIds: ['UNREAD'],
                             },
                         });
-
 
                         filteredEmails.push({
                             id: message.id,
@@ -109,10 +90,9 @@ const gmailController = {
                 console.error('Error al comprobar correos electrónicos:', error);
                 res.status(500).json('Error al comprobar correos electrónicos');
             }
-
         }
     },
-    //ANALIZAR EMAILS Y CREAR TASK
+
     EmailsToTasks: async (req, res) => {
         const auth = authManager.getGlobalAuth();
 
