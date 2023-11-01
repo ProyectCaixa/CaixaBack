@@ -2,10 +2,9 @@ const { google } = require('googleapis');
 const authManager = require('./authManager');
 const { DateTime } = require('luxon');
 
-
 const calendarController = {
     todayEvents: async (req, res) => {
-        // coger todos los eventos del dia, exceptuando los de color morado que son los que hemos puesto para formaciones y demas actividades internas.
+
         try {
             const auth = authManager.getGlobalAuth();
 
@@ -53,8 +52,6 @@ const calendarController = {
                     description: event.description,
                 }));
 
-
-                console.log('Upcoming 10 events:', upcomingEvents);
                 res.json(upcomingEvents);
             } catch (error) {
                 console.error('Error al listar eventos:', error);
@@ -173,7 +170,6 @@ const calendarController = {
                     });
                 }
                 if (i === events.length - 1) {
-                    // Crear evento al final
                     const eventEndTime = DateTime.fromISO(events[i].end.dateTime).toISO();
 
                     const event = {
@@ -218,8 +214,6 @@ const calendarController = {
 
                     }
                 }
-
-
             }
 
             return res.status(200).json('Eventos de formación insertados');
